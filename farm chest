@@ -1,0 +1,166 @@
+getgenv().Team = "Pirates"
+getgenv().Auto_Chest = true
+getgenv().Hop_Server = true
+
+if getgenv().Team == nil then
+	getgenv().Team = "Pirates"
+end
+
+local GameLoadGui = Instance.new("Message", workspace)
+GameLoadGui.Text = 'HIHUB FARM CHEST FREE'
+local function SelectTeam()
+    local ChooseTeam = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("ChooseTeam", true)
+    local UIController = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("UIController", true)
+
+    if UIController and ChooseTeam then
+        for i, v in pairs(getgc()) do
+            if type(v) == "function" and getfenv(v).script == UIController then
+                local constant = getconstants(v)
+                if constant[1] == getgenv().Team and #constant == 1 then
+                    v(getgenv().Team)
+                end
+            end
+        end
+    end
+end
+
+repeat
+    task.wait()
+    if not game.Players.LocalPlayer.PlayerGui.Main:FindFirstChild("ChooseTeam") then
+        break
+    end
+
+    local success, errorMessage = pcall(SelectTeam)
+    if not success then
+        warn("Error in SelectTeam function: " .. errorMessage)
+    end
+
+    wait(1)
+until game.Players.LocalPlayer.Team ~= nil and game:IsLoaded()
+
+
+local function checkForGodsChalice()
+    local backpack = game.Players.LocalPlayer.Backpack
+    local character = game.Players.LocalPlayer.Character
+
+    return backpack:FindFirstChild("God's Chalice") or character:FindFirstChild("God's Chalice") or backpack:FindFirstChild("Fist of Darkness") or character:FindFirstChild("Fist of Darkness")
+end
+
+function Hop()
+	local PlaceID = game.PlaceId
+	local AllIDs = {}
+	local foundAnything = ""
+	local actualHour = os.date("!*t").hour
+	local Deleted = false
+
+	function TPReturner()
+		local Site
+		if foundAnything == "" then
+			Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100'))
+		else
+			Site = game.HttpService:JSONDecode(game:HttpGet('https://games.roblox.com/v1/games/' .. PlaceID .. '/servers/Public?sortOrder=Asc&limit=100&cursor=' .. foundAnything))
+		end
+		local ID = ""
+		if Site.nextPageCursor and Site.nextPageCursor ~= "null" and Site.nextPageCursor ~= nil then
+			foundAnything = Site.nextPageCursor
+		end
+		local num = 0
+		for i, v in pairs(Site.data) do
+			local Possible = true
+			ID = tostring(v.id)
+			if tonumber(v.maxPlayers) > tonumber(v.playing) then
+				for _, Existing in pairs(AllIDs) do
+					if num ~= 0 then
+						if ID == tostring(Existing) then
+							Possible = false
+						end
+					else
+						if tonumber(actualHour) ~= tonumber(Existing) then
+							local delFile = pcall(function()
+								AllIDs = {}
+								table.insert(AllIDs, actualHour)
+							end)
+						end
+					end
+					num = num + 1
+				end
+				if Possible == true then
+					table.insert(AllIDs, ID)
+					pcall(function()
+						game:GetService("TeleportService"):TeleportToPlaceInstance(PlaceID, ID, game.Players.LocalPlayer)
+					end)
+				end
+			end
+		end
+	end
+
+	while wait() do
+        if checkForGodsChalice() then
+            print("God's Chalice found. Stopping Hop.")
+            break
+        end
+
+        pcall(function()
+            TPReturner()
+            if foundAnything ~= "" then
+                TPReturner()
+            end
+        end)
+    end
+
+end
+
+ggez = function(suck)
+	game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = suck
+end
+
+xZcLuvHades = function(mydick)
+	for i = 1, 6 do
+		ggez(mydick)
+		game.Players.LocalPlayer.Character.Humanoid:ChangeState(14)
+	end
+end
+
+task.spawn(function()
+    while task.wait() do
+        if getgenv().Auto_Chest then
+            if checkForGodsChalice() then
+                getgenv().Auto_Chest = false
+                print("God's Chalice found. Stopping Auto_Chest.")
+                break
+            end
+
+            local success, errorMessage = pcall(function()
+                local chestList = game:GetService("Workspace"):GetChildren()
+                for _, v in ipairs(chestList) do
+                    if v.Name == "Chest1" or v.Name == "Chest2" or v.Name == "Chest3" then
+                        while v.Parent and getgenv().Auto_Chest do
+                            task.wait()
+                            xZcLuvHades(v.CFrame)
+                        end
+                    end
+                end
+
+                if getgenv().Hop_Server and getgenv().Auto_Chest then
+                    Hop()
+                end
+            end)
+
+            if not success then
+                warn("Error in Auto_Chest function: " .. errorMessage)
+            end
+        end
+    end
+end)
+
+spawn(function()
+	while wait() do
+		if getgenv().Auto_Chest then
+			getgenv().Auto_Chest = game:GetService("CoreGui").RobloxPromptGui.promptOverlay.ChildAdded:Connect(function(child)
+				if child.Name == 'ErrorPrompt' and child:FindFirstChild('MessageArea') and child.MessageArea:FindFirstChild("ErrorFrame") then
+					game:GetService("TeleportService"):Teleport(game.PlaceId)
+				end
+			end)
+		end
+	end
+end)
